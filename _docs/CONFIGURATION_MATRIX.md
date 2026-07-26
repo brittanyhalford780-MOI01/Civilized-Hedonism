@@ -16,8 +16,8 @@ For non-technical administrators who prefer **NOT** to edit code files manually,
 
 ```bash
 cd ~/MOI01
-chmod +x scripts/configure.sh
-./scripts/configure.sh
+chmod +x tools/configure.sh
+./tools/configure.sh
 ```
 
 
@@ -28,7 +28,7 @@ chmod +x scripts/configure.sh
 - **AWS Credentials & Key Pair Guidance:** Audits AWS access keys and `.pem` SSH key pairs. Offers automated 1-click AWS SSH key generation if missing.
 - **Lead Engineer Escalation Helper:** If any tool or credential check fails, automatically writes an `audit_diagnostics.txt` report file and formats a copy-paste prompt snippet to send to the Lead Systems Engineer or AI Copilot.
 - **System Customization:** Interactively configures Domain Name, AWS Region, and Payload Size Limit.
-- **Live DNS Propagation Poller:** Periodically checks DNS `@8.8.8.8` after OpenTofu provisions the Elastic IP, displaying a live progress counter until GoDaddy DNS resolves!
+- **Live DNS Propagation Poller:** Periodically checks DNS `@8.8.8.8` after OpenTofu provisions the Elastic IP, displaying a live progress counter until DNS resolves!
 - **GitHub Secrets Manager:** Formats all required GitHub Secrets (`SERVER_IP`, `AWS_SSH_KEY`, `WEBHOOK_URL`, `API_KEY`) for easy copy-paste or 1-click `gh secret set`.
 - **Security Guarantee:** Uses masked inputs (`read -s`) for secrets — credentials are **NEVER** saved to disk or shell history.
 
@@ -67,9 +67,9 @@ The IT / Infrastructure Lead **MUST** configure the AWS Security Group (or corpo
 
 If you need to customize system limits, ports, or domain settings manually, refer to the exact file paths and line numbers below.
 
-### 1. Edge Proxy & Payload Limits (`vault/config/nginx.conf`)
+### 1. Edge Proxy & Payload Limits (`app/config/nginx.conf`)
 
-Target File: [`vault/config/nginx.conf`](file:///srv/MOI01/vault/config/nginx.conf)
+Target File: [`app/config/nginx.conf`](file:///srv/MOI01/app/config/nginx.conf)
 
 | Variable / Directive | Exact Line | Default Value | Operational Purpose | Safe Adjustment Range |
 | :--- | :---: | :---: | :--- | :--- |
@@ -80,9 +80,9 @@ Target File: [`vault/config/nginx.conf`](file:///srv/MOI01/vault/config/nginx.co
 
 ---
 
-### 2. Node.js Application Parameters (`vault/src/server.js`)
+### 2. Node.js Application Parameters (`app/src/server.js`)
 
-Target File: [`vault/src/server.js`](file:///srv/MOI01/vault/src/server.js)
+Target File: [`app/src/server.js`](file:///srv/MOI01/app/src/server.js)
 
 | Variable Name | Exact Line | Default Value | Operational Purpose | Safe Adjustment Range |
 | :--- | :---: | :---: | :--- | :--- |
@@ -147,4 +147,3 @@ Target File: [`vault/config/moi01.service`](file:///srv/MOI01/vault/config/moi01
 2. Click **Edit** next to `WEBHOOK_URL` or `API_KEY`.
 3. Paste the new value and click **Update Secret**.
 4. Re-run or push to `main` — GitHub Actions will inject the new secret into `/etc/myapp/config.env` on deployment.
-

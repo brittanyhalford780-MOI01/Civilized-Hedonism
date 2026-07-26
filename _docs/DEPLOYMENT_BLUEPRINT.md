@@ -60,7 +60,7 @@ Before executing this blueprint, ensure you have access to the following account
 
 ### 1. External Services & Accounts
 - **AWS Account:** IAM user with permissions to manage EC2, Elastic IPs, and Security Groups.
-- **GoDaddy Account:** Access to Manage DNS for domain `moi01.vip`.
+- **Domain Registrar Account:** Access to Manage DNS for domain `moi01.vip` (Cloudflare, Namecheap, Route 53, etc.).
 - **GitHub Account / Org:** Admin access to the repository `moi01-vault` under your organization.
 - **Destination Compute Host:** (Oracle Cloud Infrastructure, AWS, GCP, or any Linux VPS) for hosting the independent audit sink destination.
 
@@ -156,7 +156,7 @@ Retrieve the static Elastic IP from the output:
 Outputs:
 elastic_ip = "54.210.123.45"
 ```
-Use this `elastic_ip` for GoDaddy DNS and the GitHub Secret `SERVER_IP`.
+Use this `elastic_ip` for your DNS A-Record and the GitHub Secret `SERVER_IP`.
 
 > [!IMPORTANT]
 > **IT / Network Administrator Requirement — Inbound Firewall Ports:**
@@ -170,15 +170,15 @@ Use this `elastic_ip` for GoDaddy DNS and the GitHub Secret `SERVER_IP`.
 
 ---
 
-## Chapter 3: GoDaddy DNS & Domain Delegation
+## Chapter 3: Domain DNS Delegation & Propagation
 
-1. Log in to **GoDaddy Domain Control Center**.
+1. Log in to your **Domain Registrar DNS Control Panel** (Cloudflare, Namecheap, Route 53, etc.).
 2. Select `moi01.vip` and navigate to **DNS Management**.
-3. Under **Records**, add an **A Record**:
+3. Under **Records**, add or update the **A Record**:
    - **Type:** `A`
    - **Name:** `@`
    - **Value:** `<YOUR_ELASTIC_IP>` (e.g., `54.210.123.45`)
-   - **TTL:** `600 seconds`
+   - **TTL:** `300 seconds`
 4. Verify propagation from your local terminal:
    ```bash
    dig +short moi01.vip @8.8.8.8
@@ -307,7 +307,7 @@ jobs:
             sudo git fetch origin main
             sudo git reset --hard origin/main
 
-            cd /var/www/moi01.vip/vault
+            cd /var/www/moi01.vip/app
             sudo npm install --production --no-audit --no-fund
 
             sudo systemctl daemon-reload
@@ -318,40 +318,69 @@ jobs:
 
 ## Chapter 8: Independent Destination Audit Sink
 
-Deploy `destination/audit_sink.py` on your destination server (Oracle Cloud, AWS, GCP, or VPS):
+Deploy `destination/audit_sink.py` on your independent destination server (Oracle Cloud, AWS, GCP, or VPS):
 
 ```bash
-# Open TCP port 8080 on firewall
-sudo firewall-cmd --permanent --add-port=8080/tcp
-sudo firewall-cmd --reload
-
-# Launch destination audit sink
-python3 destination/audit_sink.py --port 8080 --token audit2026
+# Launch destination audit sink as root on HTTP Port 80 with your token
+sudo python3 destination/audit_sink.py --port 80 --token audit2026
 ```
 
-Access the Live Dashboard in your browser at:  
-`http://<DESTINATION_SERVER_IP>:8080/audit2026/`
+Access the Live Audit Dashboard in your browser at:  
+`http://<DESTINATION_SERVER_IP>/audit2026/`
 
 ---
 
-## Chapter 9: Live Testing & Compliance Verification Protocol
+## Chapter 9: Live 3-Node Handover Verification & Testing Protocol
 
-Execute this 3-step test protocol to visually demonstrate zero-knowledge compliance for video recording or audits.
+Execute this 3-node protocol to visually demonstrate zero-knowledge compliance and record demonstration videos.
 
-### Step 1: Generate Local Test Payloads
-On your MacBook:
-```bash
-chmod +x client/generate-test-payloads.sh
-./client/generate-test-payloads.sh
+```
+  ┌──────────────────────────┐    HTTPS Transmit    ┌──────────────────────────┐    HTTP Relay     ┌──────────────────────────┐
+  │   MAC CLIENT WORKSTATION │ ───────────────────> │  VAULT EC2 SERVER NODE   │ ────────────────> │ DESTINATION AUDIT SINK   │
+  │   (MacBook / Browser)    │                      │  (https://<YOUR_DOMAIN>) │                   │ (http://<DESTINATION_IP>)│
+  └──────────────────────────┘                      └──────────────────────────┘                   └──────────────────────────┘
 ```
 
-### Step 2: Protocol Matrix
+### Node 1: Destination Server (`<DESTINATION_IP>`)
+- Run: `sudo python3 audit_sink.py --port 80 --token audit2026`
+- Dashboard: `http://<DESTINATION_IP>/audit2026/` (Displays `TOTAL RECEIVED: 0`)
+
+### Node 2: Targeted Node.js Process Monitoring (`<YOUR_SERVER_IP>`)
+
+Monitor the Node.js Vault application process (`moi01.service`) specifically to ignore unrelated Linux OS tasks:
+
+1. **Watch Node.js RAM & CPU Metrics ONLY**:
+   ```bash
+   ssh -t -i credentials/moi01-vault-key.pem ubuntu@<YOUR_SERVER_IP> "top -p \$(pgrep -d',' node)"
+   ```
+   *Why*: Filters out all unrelated OS background processes so you can monitor Node.js RAM consumption directly.
+
+2. **Physical SSD Write Accumulation Audit (Node.js Process ONLY)**:
+   ```bash
+   ssh -t -i credentials/moi01-vault-key.pem ubuntu@<YOUR_SERVER_IP> "sudo iotop -o -a -p \$(pgrep -d',' node)"
+   ```
+   *Why*: Accumulates disk write operations specifically for the Vault process to prove `0.00 B` disk writes during payload transmission.
+
+3. **Stream Volatile Application Status Logs**:
+   ```bash
+   ssh -i credentials/moi01-vault-key.pem ubuntu@<YOUR_SERVER_IP> "sudo journalctl -u moi01.service -f"
+   ```
+   *Why*: Streams real-time HTTP 200 relay events (stored 100% in volatile RAM `Storage=volatile`) without logging any customer payload contents.
+
+4. **Swap Space Paging Audit**:
+   ```bash
+   ssh -i credentials/moi01-vault-key.pem ubuntu@<YOUR_SERVER_IP> "swapon --show"
+   ```
+   *Why*: Confirms swap space is 100% disabled (returns empty), guaranteeing memory pages never swap to disk.
+
+### Node 3: Mac Workstation Transmission & Protocol Matrix
 
 | Test Case | Action | Expected Result |
 | :--- | :--- | :--- |
-| **1. 500KB Transfer** | Upload `test-500kb.json` via Vault UI | `HTTP 200 OK`; Destination Dashboard flashes green; `iotop` writes `0.00 B` |
-| **2. 10MB Overflow** | Upload `test-10mb.json` via Vault UI | `HTTP 413` dropped at Nginx edge; Node.js never sees request |
-| **3. Process Sabotage**| Run `sudo kill -SEGV <PID>` on Vault | Systemd auto-revives process in <3s; 0 core dumps written |
+| **1. 500KB Transfer** | Upload `test-500kb.json` via `https://<YOUR_DOMAIN>` | `HTTP 200 OK`; Destination Dashboard flashes green showing `🔑 Bearer audit2026`; `iotop` writes `0.00 B` |
+| **2. 10MB Overflow** | Upload `test-10mb.json` via `https://<YOUR_DOMAIN>` | `HTTP 413` dropped at Nginx edge; Node.js and Destination never receive data |
+| **3. Master Audit Suite** | Run `./tools/test-app.sh` | 100% success rate across intake, 1MB edge protection, load ramp & process sabotage tests; 0 disk writes |
+| **4. Process Sabotage**| Run `sudo kill -SEGV <PID>` on Vault EC2 | Systemd auto-revives process in <3s; 0 core dumps written |
 
 ---
 
@@ -384,4 +413,3 @@ This blueprint represents the definitive operational specification for **MOI01.V
 
 **Architect:** Principal Systems Architect  
 **Approved for Production:** Yes  
-
