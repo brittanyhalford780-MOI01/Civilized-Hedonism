@@ -1,0 +1,12 @@
+node_modules/
+*.env
+!terraform.tfvars.example
+*.pem
+*.tfstate
+*.tfstate.backup
+.terraform/
+*.tfvars
+!terraform.tfvars.example
+.DS_Store
+test-*.json
+
