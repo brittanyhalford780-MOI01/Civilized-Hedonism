@@ -1,0 +1,17 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# MOI01.VIP — Example Variable Values
+#
+# INSTRUCTIONS:
+#   1. Copy this file:  cp terraform.tfvars.example terraform.tfvars
+#   2. Fill in the real values below
+#   3. NEVER commit terraform.tfvars to git (it's in .gitignore)
+# ──────────────────────────────────────────────────────────────────────────────
+
+aws_region    = "us-east-1"
+instance_type = "t3.micro"
+ami_id        = "ami-0b6d9d3d33ba97d99"   # Ubuntu 24.04 LTS — us-east-1
+key_name      = "moi01-vault-key"          # Your AWS key pair name
+
+# Restrict SSH to specific IPs in production (e.g., your office + GitHub Actions runners)
+ssh_allowed_cidrs = ["0.0.0.0/0"]
+
