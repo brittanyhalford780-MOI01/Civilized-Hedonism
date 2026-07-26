@@ -3,7 +3,7 @@
 # ──────────────────────────────────────────────────────────────────────────────
 
 output "elastic_ip" {
-  description = "The public Elastic IP assigned to the Vault instance. Use this for the GoDaddy A-Record."
+  description = "The public Elastic IP assigned to the Vault instance. Use this for your DNS A-Record."
   value       = aws_eip.vault_ip.public_ip
 }
 
@@ -16,4 +16,3 @@ output "security_group_id" {
   description = "The Security Group ID"
   value       = aws_security_group.vault_sg.id
 }
-
