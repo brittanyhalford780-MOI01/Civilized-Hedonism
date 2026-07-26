@@ -28,6 +28,14 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    tls = {
+      source  = "hashicorp/tls"
+      version = "~> 4.0"
+    }
+    local = {
+      source  = "hashicorp/local"
+      version = "~> 2.0"
+    }
   }
 }
 
@@ -37,11 +45,34 @@ provider "aws" {
   region = var.aws_region
 }
 
+# ─── SSH Key Pair ─────────────────────────────────────────────────────────────
+
+resource "tls_private_key" "vault_key" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+resource "aws_key_pair" "vault_key_pair" {
+  key_name   = var.key_name
+  public_key = tls_private_key.vault_key.public_key_openssh
+
+  tags = {
+    Name    = var.key_name
+    Project = "MOI01"
+  }
+}
+
+resource "local_sensitive_file" "private_key_pem" {
+  content         = tls_private_key.vault_key.private_key_pem
+  filename        = "${path.module}/../credentials/${var.key_name}.pem"
+  file_permission = "0400"
+}
+
 # ─── Security Group ──────────────────────────────────────────────────────────
 
 resource "aws_security_group" "vault_sg" {
   name        = "moi01-vault-sg"
-  description = "MOI01 Vault — SSH, HTTP, HTTPS only"
+  description = "MOI01 Vault - SSH, HTTP, HTTPS only"
 
   # SSH — Restrict to known IPs in production
   ingress {
@@ -90,7 +121,7 @@ resource "aws_security_group" "vault_sg" {
 resource "aws_instance" "vault_node" {
   ami                    = var.ami_id
   instance_type          = var.instance_type
-  key_name               = var.key_name
+  key_name               = aws_key_pair.vault_key_pair.key_name
   vpc_security_group_ids = [aws_security_group.vault_sg.id]
 
   root_block_device {
@@ -117,4 +148,3 @@ resource "aws_eip" "vault_ip" {
     Project = "MOI01"
   }
 }
-

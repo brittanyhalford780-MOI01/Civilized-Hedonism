@@ -14,4 +14,3 @@ key_name      = "moi01-vault-key"          # Your AWS key pair name
 
 # Restrict SSH to specific IPs in production (e.g., your office + GitHub Actions runners)
 ssh_allowed_cidrs = ["0.0.0.0/0"]
-
