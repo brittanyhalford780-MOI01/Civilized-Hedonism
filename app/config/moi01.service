@@ -2,7 +2,7 @@
 # MOI01.VIP — systemd Service Unit
 #
 # INSTALLATION:
-#   1. sudo cp vault/config/moi01.service /etc/systemd/system/moi01.service
+#   1. sudo cp app/config/moi01.service /etc/systemd/system/moi01.service
 #   2. sudo systemctl daemon-reload
 #   3. sudo systemctl enable moi01.service
 #   4. sudo systemctl start moi01.service
@@ -16,34 +16,32 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/node /var/www/moi01.vip/vault/src/server.js
-WorkingDirectory=/var/www/moi01.vip/vault
+ExecStart=/usr/bin/node /var/www/moi01.vip/app/src/server.js
+WorkingDirectory=/var/www/moi01.vip/app
 Restart=always
 RestartSec=3s
 
 # Secret Injection from Root-Locked Environment File
 EnvironmentFile=/etc/myapp/config.env
 
-# Zero-Knowledge Output
-StandardOutput=null
-StandardError=null
+# RAM Hardening & System Limits
 LimitCORE=0
 
-# Sandboxing & Ephemeral Execution
-DynamicUser=yes
+# System Isolation Flags
 ProtectSystem=strict
 ProtectHome=yes
 PrivateTmp=yes
 PrivateDevices=yes
-NoNewPrivileges=yes
 ProtectKernelTunables=yes
 ProtectKernelModules=yes
 ProtectControlGroups=yes
-RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
-RestrictNamespaces=yes
-RestrictSUIDSGID=yes
-ReadOnlyPaths=/var/www/moi01.vip
+NoNewPrivileges=yes
+
+# Ephemeral RAM-Only User (Zero Disk Home, No /etc/passwd Entry)
+DynamicUser=yes
+
+# Explicit Read-Only Mount
+ReadOnlyPaths=/var/www/moi01.vip/app
 
 [Install]
 WantedBy=multi-user.target
-
