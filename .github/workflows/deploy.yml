@@ -11,6 +11,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 concurrency:
   group: production-deploy
@@ -40,7 +41,18 @@ jobs:
             echo "═══════════════════════════════════════════"
             echo "  MOI01.VIP — Production Deployment"
             echo "  $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-            echo "══════════════════════════════════════════"
+            echo "═══════════════════════════════════════════"
+
+            # 0. Initial Server Bootstrap (if server directory does not exist yet)
+            if [ ! -d "/var/www/moi01.vip/.git" ]; then
+              echo "▸ Initializing production directory /var/www/moi01.vip..."
+              sudo mkdir -p /var/www/moi01.vip
+              sudo chown -R ubuntu:ubuntu /var/www/moi01.vip
+              sudo git clone https://github.com/${{ github.repository }}.git /var/www/moi01.vip
+              cd /var/www/moi01.vip
+              chmod +x tools/server-init.sh
+              sudo ./tools/server-init.sh || true
+            fi
 
             # 1. Inject Secrets (Root-Locked Config)
             echo "▸ Injecting secrets into /etc/myapp/config.env..."
@@ -59,9 +71,9 @@ jobs:
             sudo git fetch origin main
             sudo git reset --hard origin/main
 
-            # 3. Install Vault Dependencies
-            echo "▸ Installing Node.js dependencies in vault..."
-            cd /var/www/moi01.vip/vault
+            # 3. Install App Dependencies
+            echo "▸ Installing Node.js dependencies in app..."
+            cd /var/www/moi01.vip/app
             sudo npm install --production --no-audit --no-fund
 
             # 4. Restart Service
@@ -78,4 +90,3 @@ jobs:
               sudo journalctl -u moi01.service -n 20 --no-pager
               exit 1
             fi
-
