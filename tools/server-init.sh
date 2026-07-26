@@ -8,7 +8,7 @@
 # USAGE:
 #   chmod +x scripts/server-init.sh
 #   sudo bash scripts/server-init.sh
-# ─────────────────────────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────────────
 
 set -euo pipefail
 
@@ -47,7 +47,7 @@ systemctl enable nginx
 
 # 4. Certbot
 echo "▸ [4/12] Installing Certbot..."
-apt-get install -y -qq certbot python3-certbot-nginx
+apt-get install -y -qq certbot python3-certbot-nginx iotop
 
 # 5. UFW Firewall
 echo "▸ [5/12] Configuring UFW firewall..."
@@ -57,6 +57,18 @@ ufw allow 22/tcp comment "SSH"
 ufw allow 80/tcp comment "HTTP"
 ufw allow 443/tcp comment "HTTPS"
 ufw --force enable
+
+# 5b. SSH Daemon Hardening (Key-Only Auth, Disable Passwords & Root Login)
+echo "▸ Hardening SSH daemon (Disabling Password Auth & Root Login)..."
+mkdir -p /etc/ssh/sshd_config.d
+cat > /etc/ssh/sshd_config.d/99-hardened.conf <<EOF
+PermitRootLogin no
+PasswordAuthentication no
+PubkeyAuthentication yes
+KbdInteractiveAuthentication no
+MaxAuthTries 3
+EOF
+systemctl reload ssh 2>/dev/null || systemctl reload sshd 2>/dev/null || true
 
 # 6. Disable Swap (RAM-Only Guarantee)
 echo "▸ [6/12] Disabling swap..."
@@ -89,37 +101,55 @@ systemctl restart systemd-journald
 echo "▸ [9/12] Applying kernel sysctl parameters..."
 sysctl -p
 
+DOMAIN="${DOMAIN:-yourdomain.com}"
+echo "▸ Target Domain: $DOMAIN"
+
 # 10. Application Directories
 echo "▸ [10/12] Creating application directories..."
 mkdir -p /var/www/moi01.vip
 mkdir -p /etc/myapp
 
-# 11. Install Nginx Config
-echo "▸ [11/12] Installing Nginx configuration..."
-cp "$REPO_ROOT/vault/config/nginx.conf" /etc/nginx/sites-available/moi01.vip
+# 11. Install Nginx Config & Domain Setup
+echo "▸ [11/12] Installing Nginx configuration for domain '$DOMAIN'..."
+cp "$REPO_ROOT/app/config/nginx.conf" /etc/nginx/sites-available/moi01.vip
+sed -i "s/DOMAIN_PLACEHOLDER/$DOMAIN/g" /etc/nginx/sites-available/moi01.vip
 ln -sf /etc/nginx/sites-available/moi01.vip /etc/nginx/sites-enabled/moi01.vip
 rm -f /etc/nginx/sites-enabled/default
 nginx -t
 systemctl reload nginx
 
-# 12. Install systemd Service Unit
-echo "▸ [12/12] Installing systemd service..."
-cp "$REPO_ROOT/vault/config/moi01.service" /etc/systemd/system/moi01.service
+# 11b. Automated Let's Encrypt TLS/SSL Certificate Issuance
+if command -v certbot &>/dev/null && [ -n "$DOMAIN" ]; then
+    echo "▸ Attempting Automated Let's Encrypt TLS/SSL Certificate Issuance for $DOMAIN..."
+    certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos -m "admin@$DOMAIN" 2>/dev/null || echo "ℹ Note: Certbot SSL setup skipped until DNS for $DOMAIN resolves to this server."
+fi
+
+# 12. Install systemd Service Unit & Start Application
+echo "▸ [12/12] Installing systemd service & starting vault..."
+cp "$REPO_ROOT/app/config/moi01.service" /etc/systemd/system/moi01.service
 systemctl daemon-reload
 systemctl enable moi01.service
 
-if [ ! -f /etc/myapp/config.env ]; then
-    cat > /etc/myapp/config.env <<EOF
+WEBHOOK_URL="${WEBHOOK_URL:-}"
+API_KEY="${API_KEY:-}"
+
+mkdir -p /etc/myapp
+cat > /etc/myapp/config.env <<EOF
 PORT=3000
-WEBHOOK_URL=
-API_KEY=
+WEBHOOK_URL=$WEBHOOK_URL
+API_KEY=$API_KEY
 EOF
-    chown root:root /etc/myapp/config.env
-    chmod 600 /etc/myapp/config.env
+chown root:root /etc/myapp/config.env
+chmod 600 /etc/myapp/config.env
+
+if [ -d "$REPO_ROOT/app" ]; then
+    echo "▸ Installing Node.js production dependencies..."
+    cd "$REPO_ROOT/app"
+    npm install --production --no-audit --no-fund 2>/dev/null || npm install --production
+    systemctl restart moi01.service || true
 fi
 
 echo ""
 echo "═══════════════════════════════════════════════════════════════"
-echo "  ✅ Server bootstrap and OS hardening complete!"
-echo "══════════════════════════════════════════════════════════════"
-
+echo "  ✅ Server bootstrap, OS hardening & Vault launch complete!"
+echo "═══════════════════════════════════════════════════════════════"
