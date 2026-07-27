@@ -41,6 +41,8 @@ echo -e "Test Workspace: ${GREEN}$TESTS_DIR${NC}"
 echo ""
 
 # ── 1. Target URL & Credentials Resolution ──
+CUSTOM_URL="${1:-}"
+
 TARGET_DOMAIN=""
 if [ -f "$CREDENTIALS_DIR/domain.txt" ]; then
     TARGET_DOMAIN=$(cat "$CREDENTIALS_DIR/domain.txt" 2>/dev/null | tr -d '\r\n ' || echo "")
@@ -54,10 +56,12 @@ fi
 SSH_KEY="$CREDENTIALS_DIR/moi01-vault-key.pem"
 
 TARGET_URL=""
-if [ -n "$TARGET_DOMAIN" ]; then
-    TARGET_URL="https://$TARGET_DOMAIN"
+if [ -n "$CUSTOM_URL" ]; then
+    TARGET_URL="$CUSTOM_URL"
 elif [ -n "$SERVER_IP" ]; then
     TARGET_URL="http://$SERVER_IP"
+elif [ -n "$TARGET_DOMAIN" ]; then
+    TARGET_URL="https://$TARGET_DOMAIN"
 else
     TARGET_URL="http://127.0.0.1:3000"
 fi

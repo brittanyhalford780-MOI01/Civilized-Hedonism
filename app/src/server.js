@@ -73,26 +73,31 @@ app.post("/api/submit", async (req, res, next) => {
     const payloadString = JSON.stringify(req.body);
     const bytesProcessed = Buffer.byteLength(payloadString);
 
-    // If no webhook configured, just acknowledge receipt
-    if (!WEBHOOK_URL) {
-      return res.status(200).json({
-        status: "received",
-        message: "Payload processed in RAM. No webhook configured — data discarded.",
-        bytesProcessed,
-      });
+    // Forward payload to destination audit sink (if configured)
+    let webhookResult = null;
+    let relayWarning = null;
+
+    if (WEBHOOK_URL && WEBHOOK_URL.trim() !== "") {
+      try {
+        webhookResult = await forwardToWebhook(payloadString);
+      } catch (err) {
+        console.warn(`[Vault Relay Warning] Webhook relay to ${WEBHOOK_URL} failed: ${err.message}`);
+        relayWarning = err.message;
+      }
     }
 
-    // Forward payload to destination audit sink
-    const result = await forwardToWebhook(payloadString);
-
     return res.status(200).json({
-      status: "relayed",
-      message: "Payload processed in RAM and relayed to destination. Local copy discarded.",
-      webhookStatus: result.statusCode,
+      status: webhookResult ? "relayed" : "received",
+      message: webhookResult
+        ? "Payload processed in RAM and relayed to destination. Local copy discarded."
+        : relayWarning
+        ? `Payload processed in RAM. Downstream relay failed (${relayWarning}). RAM cleared.`
+        : "Payload processed in RAM. Standalone mode — RAM cleared.",
+      webhookStatus: webhookResult ? webhookResult.statusCode : null,
       bytesProcessed,
     });
   } catch (error) {
-    // Pass to global error handler
+    // Pass unhandled parser errors to global error handler
     next(error);
   }
 });
