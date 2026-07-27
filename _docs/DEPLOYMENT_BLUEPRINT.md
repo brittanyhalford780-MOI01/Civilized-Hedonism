@@ -184,6 +184,12 @@ Use this `elastic_ip` for your DNS A-Record and the GitHub Secret `SERVER_IP`.
    dig +short moi01.vip @8.8.8.8
    ```
 
+> [!WARNING]
+> **Developer Operational Guidance: Let's Encrypt Certificate Issuance Rate Limits**  
+> Let's Encrypt enforces a strict global rate limit of **5 duplicate certificates per domain per 7 days** (and 50 certificates per registered domain per week).  
+> - **Risk of Excessive Teardowns**: If a developer or CI pipeline repeatedly tears down (`./tools/destroy.sh`) and re-provisions (`./tools/configure.sh`) infrastructure on the same domain multiple times in a single day, Let's Encrypt will block SSL issuance with HTTP 429 (`Rate Limit Exceeded`).  
+> - **Developer Testing Best Practice**: During rapid development and teardown testing loops, test via direct IP (`http://<YOUR_SERVER_IP>`). Reserve full domain TLS certificate issuance (`https://<YOUR_DOMAIN>`) for stable production deployments.
+
 ---
 
 ## Chapter 4: Initial AWS EC2 Bootstrap & OS Hardening

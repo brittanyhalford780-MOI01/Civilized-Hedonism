@@ -131,6 +131,13 @@ Once deployed, access the live application in your browser:
 - **Direct Server IP**: `http://<YOUR_SERVER_IP>`
 - **Production Domain**: `https://<YOUR_DOMAIN>`
 
+> [!WARNING]
+> **Important: Let's Encrypt TLS Certificate Rate Limits**  
+> Let's Encrypt enforces a strict limit of **5 duplicate TLS certificates per domain per 7 days**.  
+> If you repeatedly teardown (`./tools/destroy.sh`) and re-provision (`./tools/configure.sh`) the server multiple times per day on the same domain, Let's Encrypt will block new certificate issuance for up to 7 days (HTTP 429 Rate Limit Exceeded).  
+> - **For Rapid Testing / Development**: Access the server via direct HTTP (`http://<YOUR_SERVER_IP>`) during rapid teardown loops.  
+> - **For Stable Production**: Issue the production TLS certificate (`https://<YOUR_DOMAIN>`) once domain DNS and server IP setup are finalized.
+
 #### 🎥 3B. Live Video Demonstration & Handover Verification Protocol (3-Node Setup)
 
 ```
