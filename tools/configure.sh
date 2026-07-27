@@ -660,6 +660,9 @@ get_webhook_url() {
     local url=""
     if [ -f "$CREDENTIALS_DIR/webhook_url.txt" ]; then
         url=$(cat "$CREDENTIALS_DIR/webhook_url.txt" 2>/dev/null | tr -d '\r\n' || echo "")
+        if [ -n "$url" ] && [[ "$url" != */submit ]] && [[ "$url" != */submit/ ]]; then
+            url="${url%/}/submit"
+        fi
     fi
     echo "$url"
 }

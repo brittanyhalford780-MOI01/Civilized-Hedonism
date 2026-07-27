@@ -180,7 +180,7 @@ ssh -i credentials/moi01-vault-key.pem ubuntu@<YOUR_SERVER_IP> "swapon --show"
 1. Run 1-Click Master Audit & Auto-Healing Test Suite (`tests/` workspace):
    ```bash
    chmod +x ./tools/test-app.sh
-   ./tools/test-app.sh
+   ./tools/test-app.sh https://<YOUR_DOMAIN>
    ```
    *(Generates dynamic test payloads in `tests/`, verifies HTTP 200/413, executes load ramp, simulates `kill -9` process sabotage, verifies systemd auto-healing, and saves report to `tests/AUDIT_TEST_REPORT.md`).*
 

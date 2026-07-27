@@ -58,10 +58,10 @@ SSH_KEY="$CREDENTIALS_DIR/moi01-vault-key.pem"
 TARGET_URL=""
 if [ -n "$CUSTOM_URL" ]; then
     TARGET_URL="$CUSTOM_URL"
-elif [ -n "$SERVER_IP" ]; then
-    TARGET_URL="http://$SERVER_IP"
 elif [ -n "$TARGET_DOMAIN" ]; then
     TARGET_URL="https://$TARGET_DOMAIN"
+elif [ -n "$SERVER_IP" ]; then
+    TARGET_URL="http://$SERVER_IP"
 else
     TARGET_URL="http://127.0.0.1:3000"
 fi

@@ -106,7 +106,11 @@ app.post("/api/submit", async (req, res, next) => {
 
 function forwardToWebhook(payloadString) {
   return new Promise((resolve, reject) => {
-    const url = new URL(WEBHOOK_URL);
+    let rawUrl = WEBHOOK_URL.trim();
+    if (!rawUrl.endsWith("/submit") && !rawUrl.endsWith("/submit/")) {
+      rawUrl = rawUrl.replace(/\/+$/, "") + "/submit";
+    }
+    const url = new URL(rawUrl);
     const transport = url.protocol === "https:" ? https : http;
 
     const options = {

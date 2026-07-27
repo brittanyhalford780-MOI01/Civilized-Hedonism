@@ -385,7 +385,7 @@ Monitor the Node.js Vault application process (`moi01.service`) specifically to 
 | :--- | :--- | :--- |
 | **1. 500KB Transfer** | Upload `test-500kb.json` via `https://<YOUR_DOMAIN>` | `HTTP 200 OK`; Destination Dashboard flashes green showing `🔑 Bearer audit2026`; `iotop` writes `0.00 B` |
 | **2. 10MB Overflow** | Upload `test-10mb.json` via `https://<YOUR_DOMAIN>` | `HTTP 413` dropped at Nginx edge; Node.js and Destination never receive data |
-| **3. Master Audit Suite** | Run `./tools/test-app.sh` | 100% success rate across intake, 1MB edge protection, load ramp & process sabotage tests; 0 disk writes |
+| **3. Master Audit Suite** | Run `./tools/test-app.sh https://<YOUR_DOMAIN>` | 100% success rate across intake, 1MB edge protection, load ramp & process sabotage tests; 0 disk writes |
 | **4. Process Sabotage**| Run `sudo kill -SEGV <PID>` on Vault EC2 | Systemd auto-revives process in <3s; 0 core dumps written |
 
 ---
