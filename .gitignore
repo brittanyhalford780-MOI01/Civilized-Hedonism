@@ -1,5 +1,9 @@
+credentials/
 node_modules/
 *.env
+.aws_credentials
+.wizard_state.json
+audit_diagnostics.txt
 !terraform.tfvars.example
 *.pem
 *.tfstate
@@ -9,4 +13,6 @@ node_modules/
 !terraform.tfvars.example
 .DS_Store
 test-*.json
+tests/
 
+GIT_ACTION_PLAN.md

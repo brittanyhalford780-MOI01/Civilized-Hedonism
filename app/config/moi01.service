@@ -1,0 +1,47 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# MOI01.VIP — systemd Service Unit
+#
+# INSTALLATION:
+#   1. sudo cp app/config/moi01.service /etc/systemd/system/moi01.service
+#   2. sudo systemctl daemon-reload
+#   3. sudo systemctl enable moi01.service
+#   4. sudo systemctl start moi01.service
+# ──────────────────────────────────────────────────────────────────────────────
+
+[Unit]
+Description=MOI01.VIP Zero-Knowledge Vault Service
+Documentation=https://github.com/your-org/moi01-vault
+After=network-online.target nginx.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/node /var/www/moi01.vip/app/src/server.js
+WorkingDirectory=/var/www/moi01.vip/app
+Restart=always
+RestartSec=3s
+
+# Secret Injection from Root-Locked Environment File
+EnvironmentFile=/etc/myapp/config.env
+
+# RAM Hardening & System Limits
+LimitCORE=0
+
+# System Isolation Flags
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+NoNewPrivileges=yes
+
+# Ephemeral RAM-Only User (Zero Disk Home, No /etc/passwd Entry)
+DynamicUser=yes
+
+# Explicit Read-Only Mount
+ReadOnlyPaths=/var/www/moi01.vip/app
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,24 @@
+{
+  "name": "moi01-vault",
+  "version": "1.0.0",
+  "description": "MOI01.VIP Zero-Knowledge Ephemeral Vault — RAM-only payload relay",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test test/test.js"
+  },
+  "keywords": [
+    "vault",
+    "zero-knowledge",
+    "ephemeral",
+    "security"
+  ],
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "express": "^5.2.1"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
