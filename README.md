@@ -179,8 +179,8 @@ ssh -i credentials/moi01-vault-key.pem ubuntu@<YOUR_SERVER_IP> "swapon --show"
 ##### Node 3: Transmit Test Payloads & Run Master Audit Suite
 1. Run 1-Click Master Audit & Auto-Healing Test Suite (`tests/` workspace):
    ```bash
-   chmod +x ./tools/test-vault.sh
-   ./tools/test-vault.sh
+   chmod +x ./tools/test-app.sh
+   ./tools/test-app.sh
    ```
    *(Generates dynamic test payloads in `tests/`, verifies HTTP 200/413, executes load ramp, simulates `kill -9` process sabotage, verifies systemd auto-healing, and saves report to `tests/AUDIT_TEST_REPORT.md`).*
 
